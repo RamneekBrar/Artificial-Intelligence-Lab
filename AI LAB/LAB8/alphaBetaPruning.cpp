@@ -1,267 +1,345 @@
-#include <iostream>
+#include<iostream>
+#include<vector>
 using namespace std;
 
-#define COMPUTER 1
-#define HUMAN 2
+int COUNT=0;
+int MAX_DEPTH=9;
 
-int player = 3, opponent = 5;
-int count_times = 0;
-
-void showBoard(int board[])
+void display(vector<int> board)
 {
+    char arr[10];
     for(int i=1;i<=9;i++)
     {
-        if(i==3 || i==6)
-        {
-            if(board[i]==2)
-            cout << " \n";
-            else if(board[i]==3)
-            cout << "x\n";
-            else
-            cout << "o\n";
-
-            cout << "---------\n";
-        }
-        else if(i==9)
-        {
-            if(board[i]==2)
-            cout << " \n";
-            else if(board[i]==3)
-            cout << "x\n";
-            else
-            cout << "o\n";
-        }
+        if(board[i]==2)
+        arr[i]='_';
+        else if(board[i]==5)
+        arr[i]='o';
         else
-        {
-            if(board[i]==2)
-            cout << "  | ";
-            else if(board[i]==3)
-            cout << "x | ";
-            else
-            cout << "o | ";
-        }
+        arr[i]='x';   
     }
+    cout
+    <<arr[1]<<"  "<<arr[2]<<"  "<<arr[3]<<endl
+    <<arr[4]<<"  "<<arr[5]<<"  "<<arr[6]<<endl
+    <<arr[7]<<"  "<<arr[8]<<"  "<<arr[9]<<endl;
+    cout<<endl;
 }
-
-
-void initialise(int board[10])
+int check(char ch, vector<int> board)
 {
-    for (int i = 1; i <=9; i++)
+    int winProduct;
+    if(ch=='o')
+    winProduct = 125;
+    else 
+    winProduct = 27;
+
+    int i=1,j=2,k=3;
+    //for three rows
+    while(i<=7)
     {
-        board[i] = 2;
-    }
-}
+        if(board[i]*board[j]*board[k] == winProduct)
+        return winProduct;
 
-bool isWin(int board[])
+        i+=3;
+        j+=3;
+        k+=3;
+    }
+    i=1;j=4;k=7;
+    //for three columns
+    while(i<=3)
+    {
+        if(board[i]*board[j]*board[k] == winProduct)
+        return winProduct;
+
+        i+=1;
+        j+=1;
+        k+=1;
+    }
+    //for two diagonals
+    if(board[1]*board[5]*board[9]==winProduct)
+    return winProduct;
+    if(board[3]*board[5]*board[7]==winProduct)
+    return winProduct;
+
+    return 0;
+}
+vector<int> makeBoard(vector<int> board, int move, char ch)
 {
-    for (int row = 0; row<3; row++)
+    if(ch == 'x')
+    board[move] = 3;
+    else if(ch == 'o')
+    board[move] = 5;
+
+    return board;
+
+}
+vector<int> moveGenerator(vector<int> board)
+{
+    vector<int> emptyPlaces;
+    for(int i=1;i<=9;i++)
+    {
+        if(board[i] == 2)
+        emptyPlaces.push_back(i);
+    }
+    
+    return emptyPlaces;
+}
+int rating(vector<int> board)
+{
+    
+    int i=1,j=2,k=3;
+    while(i<=7)
+    {
+        if(board[i]==board[j] && board[j]==board[k])
+        {
+            if(board[i]==3)
+            return 10;
+            else if(board[i]==5)
+            return -10;
+
+        }
+        i+=3;
+        j+=3;
+        k+=3;
+    }
+    //for three columns
+    i=1,j=4,k=7;
+    while(i<=3)
+    {
+        if(board[i]==board[j] && board[j]==board[k])
+        {
+            if(board[i]==3)
+            return 10;
+            else if(board[i]==5)
+            return -10;
+
+        }
+        i+=1;
+        j+=1;
+        k+=1;
+    }
+    if(board[1]==board[5] && board[5]==board[9])
+    {
+        if(board[1]==3)
+        return 10;
+        else if(board[1]==5)
+        return -10;
+    }
+   
+    if(board[3]==board[5] && board[5]==board[7])
+    {
+        if(board[3]==3)
+        return 10;
+        else if( board[3]==5)
+        return -10;
+    }
+    
+    int rating=0;
+    for(int i=1;i<=9;i++)
+    {
+        if(i==5)
+        {
+            if(board[i]==3)
+            rating += 5;
+            else if (board[i]==5)
+            rating -= 5;
+            continue;
+        }
+
+        if(i==1 || i==3 || i==7 || i==9)
+        {
+            if(board[i]==3)
+            rating += 3;
+            else if(board[i]==5)
+            rating -= 3;
+            continue;
+        }
+        if(i==2 || i==4 || i==6 || i==8)
+        {
+            if(board[i]==3)
+            rating += 1;
+            else if(board[i]==5)
+            rating -= 1;
+            
+        }
+        
+    }
+
+    return rating;
+    
+    }
+int minimax(vector<int> board, int depth, bool isMax, int alpha, int beta)
+{
+    COUNT++;
+	int currRating = rating(board);
+
+	if (currRating == 10)
+		return currRating;
+
+	if (currRating == -10)
+		return currRating;
+
+    if(moveGenerator(board).empty() || depth==MAX_DEPTH)
+    return 0;
+	
+    vector<int> succ = moveGenerator(board);
+    int bestRating;
+
+	if (isMax)
 	{
-		if (board[1+3*row]== board[2+3*row] && board[2+3*row] == board[3+3*row] && board[1+3*row] != 2)
-		{
-            return true;
-		}
-	}
+        //computer's turn
+        bestRating = -100;
+        for(auto x : succ)
+        {
+            board[x] = 3;//making move
+            int curr = minimax(board, depth+1, !isMax, alpha, beta);
+            board[x] = 2;//undoing the move
+            
+            if(curr > bestRating)
+            bestRating = curr;
+            if(bestRating > alpha)
+            alpha = bestRating;
 
-	for (int col = 0; col<3; col++)
+            if(alpha >= beta)
+            break;
+
+        }
+    }   
+	else
 	{
-		if (board[1+col]== board[4+col] && board[4+col]==board[7+col] && board[1+col] != 2)
-		{
-            return true;
-		}
+		bestRating = 100;
+        for(auto x : succ)
+        {
+            board[x] = 5;
+            int curr = minimax(board, depth+1, !isMax, alpha, beta);
+            board[x] = 2;
+            if(curr < bestRating)
+            bestRating = curr;
+
+            if(bestRating <= beta)
+            beta = bestRating;
+
+            if(alpha >= beta)
+            break;
+            
+        }
 	}
-
-	if (board[1]==board[5] && board[5]==board[9] && board[5] != 2)
-	{
-		return true;
-	}
-
-	if (board[3]==board[5] && board[5]==board[7] && board[5] != 2)
-	{
-		return true;
-	}
-
-    return (false);
+    return bestRating;
 }
-
-bool gameOver(int board[])
+int bestMove(vector<int> board)
 {
-    return isWin(board);
-}
+    int best, bestRating = -100;
+    vector<int> succ = moveGenerator(board);
 
-int minimax(int board[], int depth, bool isAI, int edepth)
+    int alpha = -10000;
+    int beta = 10000;
+    for(auto x : succ)
+    {
+        board[x] = 3;
+        int moveVal = minimax(board, 0, false, alpha, beta);
+        board[x] = 2;
+        if(moveVal > bestRating)
+        {
+            best = x;
+            bestRating = moveVal;
+        }
+    }
+    return best;
+
+}
+vector<int> computerMove(vector<int> board)
 {
-    int score = 0;
-    int bestScore = 0;
-    count_times = count_times+1;
-    if (gameOver(board) == true)
-    {
-        if (isAI == true)
-            return -1;
-        if (isAI == false)
-            return +1;
-    }
-    else
-    {
-        if (depth < edepth)
-        {
-            if (isAI == true)
-            {
-                bestScore = -9999;
-                for (int i = 1; i <=9 ; i++)
-                {
-                    if (board[i] == 2)
-                    {
-                        board[i] = 5;
-                        score = minimax(board, depth + 1, false,edepth);
-                        board[i] = 2;
-                        if(score == 1){
-                            return score;
-                        }
-                        if (score > bestScore)
-                        {
-                            bestScore = score;
-                        }
-                    }
-                }
-                return bestScore;
-            }
-            else
-            {
-                bestScore = 9999;
-                for (int i = 1; i <= 9; i++)
-                {
-                    if (board[i] == 2)
-                    {
-                        board[i] = 3;
-                        score = minimax(board, depth + 1, true,edepth);
-                        board[i] = 2;
-                        if(score == -1){
-                            return score;
-                        }
-                        if (score < bestScore)
-                        {
-                            bestScore = score;
-                        }
-                    }
-
-                }
-                return bestScore;
-            }
-        }
-        else
-        {
-            return 0;
-        }
-    }
+    int move = bestMove(board);
+    cout<<"Number of times minimax is called (alpha-beta purning) - "<<COUNT<<endl;
+    COUNT=0;
+    return makeBoard(board, move, 'x');
 }
-
-int bestMove(int board[], int moveIndex, int edepth)
+vector<int> userMove(vector<int> board)
 {
-    int x = -1;
-    int score = 0, bestScore = -9999;
-    for (int i = 1; i <= 9; i++)
+    cout<<"choose position - ";
+    int move;
+    cin>>move;
+
+    if(board[move] != 2)
     {
-            if (board[i] == 2)
-            {
-                board[i] = 5;
-                score = minimax(board, moveIndex + 1, false, edepth);
-                board[i] = 2;
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    x = i;
-                }
-            }
+        cout<<"Invalid move :("<<endl;
+        return userMove(board);
     }
-    return x;
+    
+    return makeBoard(board,move,'o');
 }
-
-void playTicTacToe(int whoseTurn, int edepth)
-{
-    int board[10];
-    int moveIndex = 0;
-
-    initialise(board);
-
-    while (!gameOver(board) && moveIndex != 9)
-    {
-        int n;
-        if (whoseTurn == COMPUTER)
-        {
-            n = bestMove(board, moveIndex,edepth);
-            board[n] = 5;
-            showBoard(board);
-            moveIndex++;
-            whoseTurn = HUMAN;
-        }
-
-        else if (whoseTurn == HUMAN)
-        {
-            cout << "\n\nEnter the position = ";
-            cin >> n;
-            n;
-            if (board[n] == 2 && n <= 9 && n >= 1)
-            {
-                board[n] = 3;
-                showBoard(board);
-                moveIndex++;
-                whoseTurn = COMPUTER;
-            }
-            else if (board[n] != 2 && n <= 9 && n >= 1)
-            {
-                cout << "\nPosition is occupied, select any one place from the available places\n\n";
-            }
-            else if (n < 1 || n > 9)
-            {
-                cout << "Invalid position\n";
-            }
-        }
-    }
-    if (gameOver(board) == false && moveIndex == 9)
-    {
-        cout << "It's a draw\n";
-    }
-    else
-    {
-        if (whoseTurn == COMPUTER)
-        {
-            cout << "YOU WON" << endl;
-        }
-        else if (whoseTurn == HUMAN)
-        {
-            cout << "COMPUTER WON" << endl;
-        }
-    }
-}
-
 int main()
 {
-    char conti = 'y';
-    do
-    {   int edepth;
-        char choice;
-        cout << "Do you want to start first?(y/n) : ";
-        cin >> choice;
-        cout<< "Enter the depth between 1 to 9 which you want for the AI: "<<endl;
-        cin>> edepth;
-        if (choice == 'n')
+    
+    vector<int> board = {0,2,2,2,2,2,2,2,2,2};
+
+    char ch;
+    cout<<"TIC TAC TOE"<<endl<<"COMPUTER - x\nUSER - o"<<endl;
+    cout<<"Depth - 4"<<endl;
+    cout<<"Do you want to play first? y/n"<<endl;
+    cin>>ch;
+
+    display(board);
+    int turn = 1;
+    if(ch=='y')
+    {
+        while(turn<=9 && !check('o',board) && !check('x', board))
         {
-            playTicTacToe(COMPUTER,edepth);
+            //user playes first
+            board = userMove(board);
+            cout<<"turn - "<<turn<<" (user)"<<endl;
+            display(board);
+            turn ++;
+
+            if(check('o',board)==125)
+            break;
+
+            if(turn==10)
+            break;
+
+            board = computerMove(board);
+            cout<<"turn - "<<turn<<" (computer)"<<endl;          
+            display(board);
+            turn++;
+
+            if(check('x',board) == 27)
+            break;
+
         }
-        else if (choice == 'y')
+        
+
+    }
+    else
+    {
+        while(turn<=9 && !check('o', board) && !check('x', board))
         {
-            playTicTacToe(HUMAN,edepth);
-        }
-        else
-        {
-            cout << "Invalid choice\n";
+            //computer plays first
+            board = computerMove(board);
+            cout<<"turn - "<<turn<<" (computer)"<<endl;
+            display(board);
+            turn++;
+
+            if(check('x', board) == 27)
+            break;
+
+            if(turn == 10)
+            break;
+
+            board = userMove(board);
+            cout<<"turn - "<<turn<<" (user)"<<endl;
+            display(board);
+            turn ++;
+
+            if(check('o',board) == 125)
+            break;
+
         }
 
-        cout<< "Number of times mini-max is called is : "<< count_times<<endl;
-        cout << "\nDo you want to quit(y/n) : ";
-        cin >> conti;
-
-    } while (conti == 'n');
-
-    return (0);
+    }
+    if(check('o', board) == 125)
+    cout<<"-----User wins-----"<<endl;
+    else if(check('x', board) == 27)
+    cout<<"-----Computer wins-----"<<endl;
+    else
+    cout<<"-----DRAW-----"<<endl;
+   
+    
 }
